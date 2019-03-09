@@ -33,10 +33,16 @@ class NextcloudPlugin(base.Base):
         _ = self.get_data()
         data = {self.prefix: {}}
 
-        data[self.prefix][self.instance] = {"users": {}}
+        data[self.prefix][self.instance] = {"users": {},
+                                            "storage": {},
+                                            "server": {}}
         data[self.prefix][self.instance]["users"] = {"user_count": self.user_count,
                                                      "user_active": self.user_active}
 
+        data[self.prefix][self.instance]["storage"] = {"num_files": self.nextcloud_data["storage"]["num_files"],
+                                                       "num_shares": self.nextcloud_data["shares"]["num_shares"]}
+        data[self.prefix][self.instance]["server"] = {"freespace": self.nextcloud_data["system"]["freespace"],
+                                                      "mem_used": self.mem_used}
         return data
 
     @property
@@ -50,6 +56,15 @@ class NextcloudPlugin(base.Base):
     def user_active(self):
         if self.nextcloud_data:
             return self.activeUsers["last5minutes"]
+        else:
+            return
+
+    @property
+    def mem_used(self):
+        if self.nextcloud_data:
+            mem_total = self.nextcloud_data["system"]["mem_total"]
+            mem_free = self.nextcloud_data["system"]["mem_free"]
+            return mem_total-mem_free
         else:
             return
 
