@@ -81,8 +81,9 @@ class Base(object):
         # maybe this fails for other databases than InfluxDB? then revert back to
         # val.type_instance="{}-{}".format(group, type_instance)
         if type_instance is not None:
-            val.type = group
-            val.type_instance = type_instance
+            val.type_instance = "{}-{}".format(group, type_instance)
+            #val.type = group
+            #val.type_instance = type_instance
         else:
             val.type_instance = group
         val.values = [value]
