@@ -35,10 +35,11 @@ class EmbyPlugin(base.Base):
     def get_stats(self):
         sessions = self.get_data()
         session_count = 0
-        for s in sessions:
-            if s.get("Client") in ["collectd"]:
-                continue
-            session_count += 1
+        if sessions:
+            for s in sessions:
+                if s.get("Client") in ["collectd"]:
+                    continue
+                session_count += 1
 
         data = {self.prefix: {}}
 
