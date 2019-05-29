@@ -37,9 +37,8 @@ class EmbyPlugin(base.Base):
         session_count = 0
         if sessions:
             for s in sessions:
-                if s.get("Client") in ["collectd"]:
-                    continue
-                session_count += 1
+                if s.get("PlayState").get("PlayMethod"):
+                    session_count += 1
 
         data = {self.prefix: {}}
 
