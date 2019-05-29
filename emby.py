@@ -11,10 +11,10 @@ class EmbyPlugin(base.Base):
         self.prefix = 'emby'
         self.schema = "http"
         self.port = 8096
-        self.base_url = "{}://{}:{}/emby".format(self.schema, self.instance, self.port)
 
     def get_data(self):
         import requests
+        self.base_url = "{}://{}:{}/emby".format(self.schema, self.instance, self.port)
         headers = {"X-Emby-Token": self.password}
         # system_info = "{}/System/Info?".format(self.base_url)
         # ret_system = requests.get(system_info, headers=headers)
