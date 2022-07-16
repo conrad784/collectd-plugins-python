@@ -1,6 +1,9 @@
 #!/usr/bin/env python
-# a lot of implementation taken from
+# a lot of inspiration taken from
 # https://bitbucket.org/hlauer/axp/src/master/axp.py  (C) 2020-2021 Hermann Lauer
+# for more information about the used pmu https://linux-sunxi.org/AXP209
+# (C) 2021 Conrad Sachweh
+#
 
 import collectd
 
@@ -28,22 +31,45 @@ class Value:
 class BananapiPmicPlugin(base.Base):
     def __init__(self):
         base.Base.__init__(self)
-        self.prefix = 'pmic'
-        self.names = {'acinV':'in_voltage0',
-	              'acinI':'in_current0',
-	              'vbusV':'in_voltage1',
-	              'vbusI':'in_current1',
-	              'temp':'in_temp',
-	              'gpio0V':'in_voltage3',
-	              'gpio1V':'in_voltage4',
-	              'ipsoutV':'in_voltage5',
-	              'batV':'in_voltage6',
-	              'batOI':'in_current2',
-	              'batII':'in_current3'}
-        self.path = '/sys/bus/platform/devices/axp20x-adc/iio:device0'
+        self.prefix = 'bananapi_pmic'
+        self.names = {'usb_voltage':'in_voltage0',
+	              'usb_current':'in_current0',
+	              'usb_otg_voltage':'in_voltage1',
+	              'usb_otg_current':'in_current1',
+	              'pmic_temp':'in_temp',
+	              'gpio0_voltage':'in_voltage3',
+	              'gpio1_voltage':'in_voltage4',
+	              'ips_voltage':'in_voltage5',
+	              'battery_voltage':'in_voltage6',
+	              'battery_charge_current':'in_current2',
+	              'battery_discharge_current':'in_current3'}
+        self.instance = '/sys/bus/platform/devices/axp20x-adc'
+        filenames = os.listdir(self.instance)
+        devicename = ""
+        # auto-detect, can be overwritten by confi file
+        for entry in filenames:
+            if entry.startswith("iio"):
+                devicename = entry
+        self.instance = os.path.join(self.instance, devicename) + "/"
+
+    def config_callback(self, conf):
+        """Takes a collectd conf object and fills in the local config."""
+        for node in conf.children:
+            if node.key == "Verbose":
+                if node.values[0] in ['True', 'true']:
+                    self.verbose = True
+            elif node.key == "Debug":
+                if node.values[0] in ['True', 'true']:
+                    self.debug = True
+            elif node.key == "Prefix":
+                self.prefix = node.values[0]
+            elif node.key == "Instance":
+                self.instance = node.values[0]
+            else:
+                collectd.warning("{}: unknown config key: {}".format(self.prefix, node.key))
 
     def get_data(self):
-        self.measurements=[(k,Value(os.path.join(self.path, v))) for k,v in self.names.items()]
+        self.measurements=[(k,Value(os.path.join(self.instance, v))) for k,v in self.names.items()]
         self.data = {}
         for k,v in self.measurements:
             while True:
@@ -51,17 +77,17 @@ class BananapiPmicPlugin(base.Base):
                     self.data[k]=v()
                     break
                 except TimeoutError as e:
-                    print("read ({}) {}".format(k,e))
+                    self.logerror("read ({}) {}".format(k,e))
         return self.data
 
     def get_stats(self):
         stats = self.get_data()
 
         data = {self.prefix: {}}
-        data[self.prefix][self.instance] = {self.path: {}}
+        data[self.prefix][self.instance] = {self.instance: {}}
 
         for key, value in stats.items():
-            data[self.prefix][self.instance][self.path][key] = value
+            data[self.prefix][self.instance][key] = value
 
         return data
 
