@@ -15,7 +15,8 @@ class NextcloudPlugin(base.Base):
     def get_data(self):
         import requests
         url = "{}://{}{}".format(self.schema, self.instance, self.monitoring_path)
-        ret = requests.get(url, auth=(self.username, self.password))
+        headers = {"NC-Token": self.password}
+        ret = requests.get(url, headers=headers)
         self.ret = ret
         self.text = ret.text
         if ret.ok:
